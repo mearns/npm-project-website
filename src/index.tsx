@@ -1,11 +1,11 @@
 import getPackage from "package";
-import React from 'react';
+import React from "react";
 import ReactDOMServer from "react-dom/server";
-import Homepage from "./components/homepage";
-import { renderStylesToString } from '@emotion/server'
+import TestPage from "./pages/test-page/app";
+import { renderStylesToString } from "@emotion/server";
 import mkdirp from "mkdirp";
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 export default async function generateSite(): Promise<void> {
   const outputDir = "./public";
@@ -15,13 +15,28 @@ export default async function generateSite(): Promise<void> {
   const logoUrl = logoPath && `resources/logo.${path.extname(logoPath)}`;
   if (logoPath) {
     const logoOutputPath = path.join(outputDir, logoUrl);
-    await mkdirp(path.dirname(logoOutputPath))
+    await mkdirp(path.dirname(logoOutputPath));
     await fs.promises.copyFile(logoPath, logoOutputPath);
   }
 
   const readme = stripHeader(await fs.promises.readFile("README.md", "utf-8"));
-  const html = renderStylesToString(ReactDOMServer.renderToString(<Homepage {...mainPackage} logo={logoUrl} readme={readme} />));
-  await fs.promises.writeFile(path.join(outputDir, "index.html"), html, "utf-8");
+  const appContent = ReactDOMServer.renderToString(
+    <TestPage {...mainPackage} logo={logoUrl} readme={readme} />
+  );
+  const html = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <title>${mainPackage.name}</title>
+      <script defer="true" type="application/javascript" src="script/bundles/test-page.js"></script>
+  </head>
+  <body style='margin: 0'><div id='app'>${appContent}</div></body>
+</html>`;
+  await fs.promises.writeFile(
+    path.join(outputDir, "index.html"),
+    html,
+    "utf-8"
+  );
 }
 
 function stripHeader(contents) {

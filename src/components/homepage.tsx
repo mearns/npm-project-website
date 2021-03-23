@@ -1,5 +1,5 @@
 import React from 'react';
-import { css } from '@emotion/css';
+import { css } from '@emotion/react';
 const ReactMarkdown = require('react-markdown')
 const gfm = require('remark-gfm')
 
@@ -37,15 +37,15 @@ export default function Homepage({ name, version, repository, logo, readme }) {
         .replace(/^git\+/, "")
         .replace(/^git@github.com:/, "https://github.com/");
 
-    return (<body className={css({
+    return (<body css={[{
         width: 600,
         margin: 'auto',
         textAlign: 'center',
-    }, generalStyles)}>
+    }, generalStyles]}>
         <h1>{name}</h1>
         <h2>version {version}</h2>
 
-        <nav className={css({
+        <nav css={{
             ul: {
                 listStyleType: 'none',
                 padding: 0,
@@ -58,8 +58,7 @@ export default function Homepage({ name, version, repository, logo, readme }) {
                     }
                 },
             },
-    
-        })}>
+        }}>
             <ul>
                 <li>
                     <a href="#for-humans" title="Jump to the Reports for Humans section of this page">reports for humans</a>
@@ -75,12 +74,12 @@ export default function Homepage({ name, version, repository, logo, readme }) {
             </ul>
         </nav>
 
-        <section id='top-matter' className={css({
+        <section id='top-matter' css={{
             ul: {
                 listStyleType: 'none',
                 padding: 0
             }
-        })}>
+        }}>
             { logo && 
                 <img id="logo" src={logo} alt={`Project logo for ${name}`} /> }
             
@@ -121,12 +120,12 @@ export default function Homepage({ name, version, repository, logo, readme }) {
         </section>
 
         <h2 id="readme"><a href='#readme' title='link to this section'>README</a></h2>
-        <section id="readme-section" className={css({
+        <section id="readme-section" css={{
             textAlign: 'left',
             'h1 h2 h3 h4 h5 h6': {
                 textAlign: 'center',
             },
-        })}>
+        }}>
             <ReactMarkdown plugins={[gfm]} children={readme} />
         </section>
     </body>);

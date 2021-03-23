@@ -4,10 +4,11 @@
     "esModuleInterop": true,
     "module": "CommonJS",
     "sourceMap": true,
-    "target": "es2015",
+    "target": "es5",
     "moduleResolution": "node",
     "declaration": true,
-    "jsx": "react"
+    "jsx": "react-jsx",
+    "jsxImportSource": "@emotion/react"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }
