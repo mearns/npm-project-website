@@ -43,7 +43,8 @@
     "public:reports:index": "mkdirp public && node ./dev-scripts/render-page-template.js dev-scripts/resources/pages/index.hbs > public/index.html",
     "public:source": "npm-run-all \"public:source:*\"",
     "public:source:code": "mkdirp public/src && node ./dev-scripts/render-sources.js src public src",
-    "public:source:packagejson": "mkdirp public/src && node ./dev-scripts/render-sources.js package.json public"
+    "public:source:packagejson": "mkdirp public/src && node ./dev-scripts/render-sources.js package.json public",
+    "run": "ts-node ./src/main.ts"
   },
   "husky": {
     "hooks": {
@@ -53,7 +54,6 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",
-    "copyfiles": "^2.4.1",
     "eslint": "^7.22.0",
     "eslint-config-mearns": "git+https://github.com/mearns/eslint-config-mearns.git#v0.5.0",
     "handlebars": "^4.7.7",
@@ -75,5 +75,15 @@
     "typedoc": "^0.20.32",
     "typescript": "^4.2.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@emotion/css": "^11.1.3",
+    "@emotion/react": "^11.1.5",
+    "@emotion/server": "^11.0.0",
+    "mkdirp": "^1.0.4",
+    "package": "^1.0.1",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-markdown": "^5.0.3",
+    "remark-gfm": "^1.0.0"
+  }
 }
