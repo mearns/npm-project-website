@@ -1,3 +1,4 @@
+import { Colorscheme } from "./_types";
 /**
  * Credit: https://www.gattoweb.com/, found on https://hookagency.com/website-color-schemes/
  */
@@ -13,8 +14,10 @@ export default {
   roles: {
     background: lightlyOffWhite,
     primary: darkHighlight,
-    secondary: complimentaryGreen,
-    highlight1: blush,
-    highlight2: makeupTan
+    accent: complimentaryGreen,
+    fade: blush,
+    highlight: complimentaryGreen,
+    highlightAccent: makeupTan,
+    highlightContrast: lightlyOffWhite
   }
-};
+} as Colorscheme;

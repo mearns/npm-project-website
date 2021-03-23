@@ -1,8 +1,16 @@
 import React from "react";
-import infrared from "../color-schemes/infrared";
+import * as colorschemes from "../color-schemes";
+import { Color } from "../color-schemes/_types";
 
 export default function TestPage() {
-  const [colorScheme, setColorScheme] = React.useState(infrared);
+  const selectColorscheme = React.useCallback(event => {
+    setColorschemeName(event.target.value);
+  }, []);
+  const allColorSchemes = Object.keys(colorschemes);
+  const [colorschemeName, setColorschemeName] = React.useState(
+    allColorSchemes[0]
+  );
+  const colorScheme = colorschemes[colorschemeName];
   const {
     background,
     primary,
@@ -34,6 +42,13 @@ export default function TestPage() {
         }
       }}
     >
+      <select onChange={selectColorscheme} value={colorschemeName}>
+        {Object.keys(colorschemes).map(name => (
+          <option key={name} value={name}>
+            {colorschemes[name].name}
+          </option>
+        ))}
+      </select>
       <section className="primary">
         <nav
           css={{
@@ -88,19 +103,21 @@ export default function TestPage() {
         </nav>
         <h1 className="title">Welcome to the Test Page</h1>
         <h2 className="subTitle">where you can see how a color scheme looks</h2>
-        {Object.entries(colorScheme.roles).map(([role, color]) => (
-          <div
-            key={role}
-            css={{
-              border: `1px solid ${primary}`,
-              backgroundColor: color,
-              width: 50,
-              height: 50,
-              display: "inline-block"
-            }}
-            title={role}
-          ></div>
-        ))}
+        {Object.entries(colorScheme.roles).map(
+          ([role, color]: [string, Color]) => (
+            <div
+              key={role}
+              css={{
+                border: `1px solid ${primary}`,
+                backgroundColor: color,
+                width: 50,
+                height: 50,
+                display: "inline-block"
+              }}
+              title={role}
+            ></div>
+          )
+        )}
         <br />
         <div
           css={{
