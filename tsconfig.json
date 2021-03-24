@@ -5,6 +5,7 @@
     "module": "CommonJS",
     "sourceMap": true,
     "target": "es5",
+    "lib": ["ES2019", "DOM"],
     "moduleResolution": "node",
     "declaration": true,
     "jsx": "react-jsx",

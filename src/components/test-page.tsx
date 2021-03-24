@@ -1,10 +1,15 @@
 import React from "react";
 import * as colorschemes from "../color-schemes";
-import { Color, ColorschemeVariant } from "../color-schemes/_types";
+import {
+  Color,
+  ColorschemeVariant,
+  RoleName,
+  roles
+} from "../color-schemes/_types";
 import useHashParam from "../util/use-hash";
 
 export default function TestPage() {
-  const allColorSchemes = Object.keys(colorschemes);
+  const allColorschemes = Object.keys(colorschemes);
 
   const [darkModeStr, setDarkMode] = useHashParam("d", "false");
   const selectDarkMode = React.useCallback(event => {
@@ -14,16 +19,29 @@ export default function TestPage() {
 
   const [colorschemeName, setColorschemeName] = useHashParam(
     "c",
-    allColorSchemes[0]
+    allColorschemes[0]
   );
+
+  const baseColorscheme: ColorschemeVariant =
+    colorschemes[colorschemeName][darkMode ? "dark" : "light"];
+
+  const colorOverrides: Array<[
+    RoleName,
+    [string, (v: string) => void]
+  ]> = roles.map(roleName => [
+    roleName,
+    useHashParam(roleName, baseColorscheme[roleName])
+  ]);
+
+  const colorscheme = (Object.fromEntries(
+    colorOverrides.map(([roleName, [value]]) => [roleName, value])
+  ) as Record<RoleName, string>) as ColorschemeVariant;
+
   const selectColorscheme = React.useCallback(event => {
     setColorschemeName(event.target.value);
+    colorOverrides.forEach(([, [, setOverride]]) => setOverride(""));
   }, []);
 
-  const hash = "";
-
-  const colorScheme: ColorschemeVariant =
-    colorschemes[colorschemeName][darkMode ? "dark" : "light"];
   const {
     background,
     primary,
@@ -32,7 +50,9 @@ export default function TestPage() {
     highlight,
     highlightContrast,
     highlightAccent
-  } = colorScheme;
+  } = colorscheme;
+
+  const hash = "";
   return (
     <div
       css={{
@@ -124,7 +144,7 @@ export default function TestPage() {
         </nav>
         <h1 className="title">Welcome to the Test Page</h1>
         <h2 className="subTitle">where you can see how a color scheme looks</h2>
-        {Object.entries(colorScheme).map(([role, color]: [string, Color]) => (
+        {Object.entries(colorscheme).map(([role, color]: [string, Color]) => (
           <div
             key={role}
             css={{

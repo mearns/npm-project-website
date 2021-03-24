@@ -1,4 +1,21 @@
+import doubleBlue from "./double-blue";
 import infrared from "./infrared";
 import tanGreen from "./tan-green";
+import fadedGlory from "./faded-glory";
+import greyscaleOrange from "./greyscale-orange";
 import greyscaleYellow from "./greyscale-yellow";
-export { infrared, tanGreen, greyscaleYellow };
+import greyscaleGreen from "./greyscale-green";
+import greyscaleBlueGreen from "./greyscale-blue-green";
+import greyscaleCyan from "./greyscale-cyan";
+
+export {
+  doubleBlue,
+  infrared,
+  tanGreen,
+  fadedGlory,
+  greyscaleOrange,
+  greyscaleYellow,
+  greyscaleGreen,
+  greyscaleBlueGreen,
+  greyscaleCyan
+};

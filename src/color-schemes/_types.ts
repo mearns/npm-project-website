@@ -54,6 +54,18 @@ export interface ColorschemeVariant {
   highlightAccent: Color;
 }
 
+export type RoleName = keyof ColorschemeVariant;
+
+export const roles: Array<RoleName> = [
+  "background",
+  "primary",
+  "accent",
+  "fade",
+  "highlight",
+  "highlightAccent",
+  "highlightContrast"
+];
+
 export interface Colorscheme {
   name: string;
   light: ColorschemeVariant;

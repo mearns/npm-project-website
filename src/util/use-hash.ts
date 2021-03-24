@@ -63,4 +63,3 @@ export default function useHashParam(
 
   return [innerValue || defaultValue, setValue];
 }
-module.exports = useHashParam;
