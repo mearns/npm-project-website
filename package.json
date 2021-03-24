@@ -46,7 +46,7 @@
     "public:source": "npm-run-all \"public:source:*\"",
     "public:source:code": "mkdirp public/src && node ./dev-scripts/render-sources.js src public src",
     "public:source:packagejson": "mkdirp public/src && node ./dev-scripts/render-sources.js package.json public",
-    "run": "ts-node ./src/main.ts",
+    "run": "node ./dist/main.js",
     "start": "http-server public"
   },
   "husky": {
