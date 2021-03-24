@@ -9,6 +9,7 @@ module.exports = {
       path.join(__dirname, "src", "pages", pageName, "client.ts")
     ])
   ),
+  devtool: "inline-source-map",
   mode: process.env.NODE_ENV === "production" ? "production" : "development",
   module: {
     rules: [
