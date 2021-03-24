@@ -1,3 +1,7 @@
+/**
+ * This is based on https://github.com/hejmsdz/use-hash-param/, but modified to work correctly with
+ * isomorphic rendering (plus typescript).
+ */
 import { useState, useEffect, useCallback } from "react";
 
 function getHashSearchParams(location: {
