@@ -1,16 +1,29 @@
 import React from "react";
 import * as colorschemes from "../color-schemes";
-import { Color } from "../color-schemes/_types";
+import { Color, ColorschemeVariant } from "../color-schemes/_types";
+import useHashParam from "../util/use-hash";
 
 export default function TestPage() {
+  const allColorSchemes = Object.keys(colorschemes);
+
+  const [darkModeStr, setDarkMode] = useHashParam("d", "false");
+  const selectDarkMode = React.useCallback(event => {
+    setDarkMode(event.target.checked);
+  }, []);
+  const darkMode: boolean = String(darkModeStr) === "true";
+
+  const [colorschemeName, setColorschemeName] = useHashParam(
+    "c",
+    allColorSchemes[0]
+  );
   const selectColorscheme = React.useCallback(event => {
     setColorschemeName(event.target.value);
   }, []);
-  const allColorSchemes = Object.keys(colorschemes);
-  const [colorschemeName, setColorschemeName] = React.useState(
-    allColorSchemes[0]
-  );
-  const colorScheme = colorschemes[colorschemeName];
+
+  const hash = "";
+
+  const colorScheme: ColorschemeVariant =
+    colorschemes[colorschemeName][darkMode ? "dark" : "light"];
   const {
     background,
     primary,
@@ -19,7 +32,7 @@ export default function TestPage() {
     highlight,
     highlightContrast,
     highlightAccent
-  } = colorScheme.roles;
+  } = colorScheme;
   return (
     <div
       css={{
@@ -49,6 +62,14 @@ export default function TestPage() {
           </option>
         ))}
       </select>
+      <input
+        id="darkMode"
+        type="checkbox"
+        onChange={selectDarkMode}
+        checked={darkMode}
+      />
+      <label htmlFor="darkMode">Dark mode</label>
+
       <section className="primary">
         <nav
           css={{
@@ -88,36 +109,34 @@ export default function TestPage() {
             }}
           >
             <li>
-              <a href="#fake-1">fake one</a>
+              <a href={`#${hash}`}>fake one</a>
             </li>
             <li className="_current">
-              <a href="#fake-2">fake two</a>
+              <a href={`#${hash}`}>fake two</a>
             </li>
             <li>
-              <a href="#fake-3">fake three</a>
+              <a href={`#${hash}`}>fake three</a>
             </li>
             <li className="standout">
-              <a href="#fake-4">Register!</a>
+              <a href={`#${hash}`}>Register!</a>
             </li>
           </ul>
         </nav>
         <h1 className="title">Welcome to the Test Page</h1>
         <h2 className="subTitle">where you can see how a color scheme looks</h2>
-        {Object.entries(colorScheme.roles).map(
-          ([role, color]: [string, Color]) => (
-            <div
-              key={role}
-              css={{
-                border: `1px solid ${primary}`,
-                backgroundColor: color,
-                width: 50,
-                height: 50,
-                display: "inline-block"
-              }}
-              title={role}
-            ></div>
-          )
-        )}
+        {Object.entries(colorScheme).map(([role, color]: [string, Color]) => (
+          <div
+            key={role}
+            css={{
+              border: `1px solid ${primary}`,
+              backgroundColor: color,
+              width: 50,
+              height: 50,
+              display: "inline-block"
+            }}
+            title={role}
+          ></div>
+        ))}
         <br />
         <div
           css={{
