@@ -1,6 +1,6 @@
 const path = require("path");
 
-const pages = ["test-page"];
+const pages = ["test-page", "homepage"];
 
 module.exports = {
   entry: Object.fromEntries(
