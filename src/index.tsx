@@ -32,7 +32,7 @@ export default async function generateSite({
 
   const siteData: SiteData = {
     name: mainPackage.name,
-    version: mainPackage.name,
+    version: mainPackage.version,
     repositoryUrl: mainPackage.repository?.url,
     logoUrl: logoUrl,
     readme: readme
