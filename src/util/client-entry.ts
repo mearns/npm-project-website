@@ -1,5 +1,6 @@
 import { hydrate } from "react-dom";
 import SiteData, { SiteComponent } from "./site-data";
+import { decode } from "html-entities";
 
 export default function clientHandoff(App: SiteComponent): void {
   window.addEventListener("DOMContentLoaded", () => {
@@ -15,7 +16,9 @@ function getApplicationProperties(): SiteData {
       throw new Error("Could not find #app-properties");
     }
     return JSON.parse(
-      propsEle.textContent.replace(/\\\//g, "/").replace(/\\\\/g, "\\")
+      decode(propsEle.textContent)
+        .replace(/\\\//g, "/")
+        .replace(/\\\\/g, "\\")
     ) as SiteData;
   } catch (error) {
     throw new Error(

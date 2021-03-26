@@ -6,6 +6,7 @@ export interface Package {
   name: string;
   version: string;
   logo?: string;
+  icons?: Array<string>;
   repository?: {
     type: string;
     url: string;
