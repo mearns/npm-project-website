@@ -42,11 +42,10 @@ export default async function generateSite(): Promise<void> {
 
   const html = await renderPage("homepage", siteData, Homepage, faviconTags);
 
-  await fs.promises.writeFile(
-    path.join(outputDir, "index.html"),
-    html,
-    "utf-8"
-  );
+  await fs.promises.writeFile(path.join(outputDir, "index.html"), html, {
+    encoding: "utf-8",
+    mode: READ_ONLY
+  });
   console.log("Generated page: public/index.html");
 }
 
@@ -99,6 +98,8 @@ async function getReadmeContent(rootDir: string): Promise<string | null> {
   );
 }
 
+const READ_ONLY = 0o444;
+
 /**
  * @param rootDir The root directory of the project
  * @param mainPackage The package data for the project (i.e., from package.json).
@@ -119,6 +120,7 @@ async function publishLogo(
     const logoOutputPath = path.join(outputDir, logoUrl);
     await mkdirp(path.dirname(logoOutputPath));
     await fs.promises.copyFile(logoPath, logoOutputPath);
+    await fs.promises.chmod(logoPath, READ_ONLY);
     console.log(`Copied logo file: ${logoOutputPath}`);
   }
   return logoUrl;

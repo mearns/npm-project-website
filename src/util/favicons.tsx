@@ -73,7 +73,7 @@ export async function generateFavicons(
   await fs.promises.writeFile(
     path.resolve(publicRootDir, "manifest.webmanifest"),
     JSON.stringify(manifest),
-    "utf-8"
+    { encoding: "utf-8", mode: READ_ONLY }
   );
 
   return [
@@ -114,6 +114,8 @@ export async function generateFavicons(
   ];
 }
 
+const READ_ONLY = 0o444;
+
 async function generateImage(
   allImages: Array<{ img: Jimp; file: string }>,
   publicRootDir: string,
@@ -141,7 +143,7 @@ async function generateImage(
   const urlPath = `/${pathComponents.join("/")}`;
   const outputPath = path.resolve(publicRootDir, ...pathComponents);
   await mkdirp(path.dirname(outputPath));
-  await fs.promises.writeFile(outputPath, imgBuffer);
+  await fs.promises.writeFile(outputPath, imgBuffer, { mode: READ_ONLY });
   console.log(`Generated icon ${urlPath} from ${bestImg.file}`);
   return urlPath;
 }
@@ -155,6 +157,7 @@ async function copyImage(
   const outputPath = path.resolve(publicRootDir, ...pathComponents);
   await mkdirp(path.dirname(outputPath));
   await fs.promises.copyFile(filePath, outputPath);
+  await fs.promises.chmod(filePath, READ_ONLY);
   console.log(`Copied icon ${urlPath} from ${filePath}`);
   return urlPath;
 }
