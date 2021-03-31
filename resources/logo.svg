@@ -5,21 +5,49 @@
      xmlns="http://www.w3.org/2000/svg">
 
   <style type="text/css">
-    circle {
+
+    #visible-circle {
         fill: white;
         stroke: #cccccc;
     }
-    text {
-        color: #444444;
-    }
+
     @media (prefers-color-scheme: dark) {
-        circle {
+        #visible-circle {
             fill: #444444;
             stroke: #222222;
+            mask: url("#knockout");
         }
-        text {
-            fill: #dddddd
+        #visible-text {
+            fill: #dddddd;
         }
+    }
+
+    @media (monochrome) {
+        #visible-circle {
+            fill: rgba(0, 0, 0, 0);
+            stroke: black;
+        }
+        #visible-text {
+            fill: black;
+        }
+        @media (prefers-color-scheme: dark) {
+            #visible-circle {
+                fill: black;
+                stroke: black;
+                mask: url("#knockout");
+            }
+            #visible-text {
+                display: none;
+            }
+        }
+    }
+
+
+    #mask-circle {
+        fill: white;
+    }
+    #mask-text * {
+        fill: black;
     }
 
     .small {
@@ -28,22 +56,33 @@
     .large {
         display: inherit;
     }
-
     @media (max-width: 128px), (max-height: 128px) {
-        .small {
-            display: inherit;
-        }
         .large {
             display: none;
+        }
+        .small {
+            display: inherit;
         }
     }
   </style>
 
-  <circle cx="50" cy="50" r="38" stroke-width="2" />
+  <defs>
+    <circle id="circle-ref" cx="50" cy="50" r="38" stroke-width="2" />
 
-  <text class="small" x="51" y="50" font-size="40" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">N/A</text>
+    <g id="text-ref">
+        <text class="small" x="51" y="50" font-size="40" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">N/A</text>
+        <text class="large" x="51" y="47" font-size="12" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">
+            <tspan x="50" text-anchor="middle" >NO IMAGE</tspan><tspan text-anchor="middle" x="50" dy="17">AVAILABLE</tspan>
+        </text>
+    </g>
+  </defs>
 
-  <text class="large" x="51" y="47" font-size="12" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">
-    <tspan x="50" text-anchor="middle" >NO IMAGE</tspan><tspan text-anchor="middle" x="50" dy="17">AVAILABLE</tspan>
-  </text>
+    <use href="#circle-ref" id="visible-circle"/>
+    <use href="#text-ref" id="visible-text"/>
+
+    <mask id="knockout">
+        <use href="#circle-ref" id="mask-circle" />
+        <use href="#text-ref" id="mask-text" />
+    </mask>
+
 </svg>
