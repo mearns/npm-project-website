@@ -2,6 +2,8 @@ import Jimp from "jimp";
 import path from "path";
 import fs from "fs";
 import mkdirp from "mkdirp";
+import * as FileType from "file-type";
+import xmljs from "xml-js";
 
 export async function generateFavicons(
   projectRootDir: string,
@@ -12,11 +14,15 @@ export async function generateFavicons(
     return;
   }
 
+  const fileTypes = await Promise.all(icons.map(p => detectMimeType(p)));
+
   const srcImages = await Promise.all(
-    icons.map(async p => ({
-      file: p,
-      img: await Jimp.read(path.resolve(projectRootDir, p))
-    }))
+    icons
+      .filter((p, idx) => fileTypes[idx] !== "image/svg+xml")
+      .map(async p => ({
+        file: p,
+        img: await Jimp.read(path.resolve(projectRootDir, p))
+      }))
   );
 
   const [favicon32, appleTouchIcon, icon192, icon512] = await Promise.all([
@@ -37,10 +43,31 @@ export async function generateFavicons(
 
   const manifest = {
     icons: [
-      { src: icon192, type: "image.png", sizes: "192x192" },
-      { src: icon512, type: "image.png", sizes: "512x512" }
+      { src: icon192, type: "image/png", sizes: "192x192" },
+      { src: icon512, type: "image/png", sizes: "512x512" },
+      { src: favicon32, type: "image/png", sizes: "32x32" },
+      { src: appleTouchIcon, type: "image/png", sizes: "180x180" }
     ]
   };
+
+  const svgIcons = icons.filter((p, idx) => fileTypes[idx] === "image/svg+xml");
+  if (svgIcons.length) {
+    const url = await copyImage(svgIcons[0], publicRootDir, [
+      "resources",
+      "icon.svg"
+    ]);
+    manifest.icons.unshift({
+      src: url,
+      type: "image/svg+xml",
+      sizes:
+        "1x1 12x12 16x16 24x24 32x32 48x48 72x72 96x96 128x128 256x256 512x512 1024x1024 1048576x1048576"
+    });
+    manifest.icons.unshift({
+      src: url,
+      type: "image/svg+xml",
+      sizes: "any"
+    });
+  }
 
   await mkdirp(publicRootDir);
   await fs.promises.writeFile(
@@ -117,6 +144,50 @@ async function generateImage(
   await fs.promises.writeFile(outputPath, imgBuffer);
   console.log(`Generated icon ${urlPath} from ${bestImg.file}`);
   return urlPath;
+}
+
+async function copyImage(
+  filePath: fs.PathLike,
+  publicRootDir: string,
+  pathComponents: Array<string>
+): Promise<string> {
+  const urlPath = `/${pathComponents.join("/")}`;
+  const outputPath = path.resolve(publicRootDir, ...pathComponents);
+  await mkdirp(path.dirname(outputPath));
+  await fs.promises.copyFile(filePath, outputPath);
+  console.log(`Copied icon ${urlPath} from ${filePath}`);
+  return urlPath;
+}
+
+async function detectMimeType(p: fs.PathLike): Promise<string> {
+  const buffer = await fs.promises.readFile(p);
+  const fileType = await FileType.fromBuffer(buffer);
+  if (typeof fileType !== "undefined") {
+    return fileType.mime;
+  }
+
+  const text = buffer.toString("utf-8");
+  try {
+    const xml = xmljs.xml2js(text);
+    if (xml.elements && xml.elements.length && xml.elements[0].name === "svg") {
+      return "image/svg+xml";
+    }
+    throw Object.assign(
+      new Error(
+        `Unknown XML image format for file, expected SVG as the root element: ${p}`
+      ),
+      { filePath: p }
+    );
+  } catch (_) {
+    // Not XML
+  }
+
+  throw Object.assign(
+    new Error(
+      `Unknown image format for file, expected PNG, JPEG, GIF, or SVG: ${p}`
+    ),
+    { filePath: p }
+  );
 }
 
 function findScale(

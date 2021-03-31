@@ -1,0 +1,49 @@
+<svg version="1.1"
+     baseProfile="full"
+     viewBox="0 0 300 300"
+     preserveAspectRatio="xMidYMid meet"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <style type="text/css">
+    circle {
+        fill: white;
+        stroke: #cccccc;
+    }
+    text {
+        color: #444444;
+    }
+    @media (prefers-color-scheme: dark) {
+        circle {
+            fill: #444444;
+            stroke: #222222;
+        }
+        text {
+            fill: #dddddd
+        }
+    }
+
+    .small {
+        display: none;
+    }
+    .large {
+        display: inherit;
+    }
+
+    @media (max-width: 128px), (max-height: 128px) {
+        .small {
+            display: inherit;
+        }
+        .large {
+            display: none;
+        }
+    }
+  </style>
+
+  <circle cx="150" cy="150" r="140" stroke-width="8" />
+
+  <text class="small" x="154" y="150" font-size="120" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">N/A</text>
+
+  <text class="large" x="154" y="140" font-size="40" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">
+    <tspan x="150" text-anchor="middle" >NO IMAGE</tspan><tspan text-anchor="middle" x="150" dy="50">AVAILABLE</tspan>
+  </text>
+</svg>
