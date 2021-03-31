@@ -1,6 +1,6 @@
 <svg version="1.1"
      baseProfile="full"
-     viewBox="0 0 300 300"
+     viewBox="0 0 100 100"
      preserveAspectRatio="xMidYMid meet"
      xmlns="http://www.w3.org/2000/svg">
 
@@ -39,11 +39,11 @@
     }
   </style>
 
-  <circle cx="150" cy="150" r="140" stroke-width="8" />
+  <circle cx="50" cy="50" r="38" stroke-width="2" />
 
-  <text class="small" x="154" y="150" font-size="120" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">N/A</text>
+  <text class="small" x="51" y="50" font-size="40" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">N/A</text>
 
-  <text class="large" x="154" y="140" font-size="40" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">
-    <tspan x="150" text-anchor="middle" >NO IMAGE</tspan><tspan text-anchor="middle" x="150" dy="50">AVAILABLE</tspan>
+  <text class="large" x="51" y="47" font-size="12" alignment-baseline="central" style="font-family: sans-serif" text-anchor="middle">
+    <tspan x="50" text-anchor="middle" >NO IMAGE</tspan><tspan text-anchor="middle" x="50" dy="17">AVAILABLE</tspan>
   </text>
 </svg>
