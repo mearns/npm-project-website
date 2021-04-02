@@ -9,7 +9,7 @@
   "icons": [
     "logo.png",
     "resources/icon.png",
-    "resources/logo.svg"
+    { "src": "resources/logo.svg", "sizes": "any", "purpose": ["monochrome", "maskable", "any"] }
   ],
   "files": [
     "dist/**"

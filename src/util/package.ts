@@ -6,7 +6,15 @@ export interface Package {
   name: string;
   version: string;
   logo?: string;
-  icons?: Array<string>;
+  icons?: Array<
+    | string
+    | {
+        src: string;
+        type?: string;
+        sizes?: "any" | Array<string>;
+        purpose?: Array<"maskable" | "monochrome" | "any">;
+      }
+  >;
   repository?: {
     type: string;
     url: string;

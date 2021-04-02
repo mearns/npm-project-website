@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react";
+import { ReactElement } from "react";
 import ReactDOMServer from "react-dom/server";
 import Homepage from "./pages/homepage/app";
 import mkdirp from "mkdirp";
@@ -8,9 +8,8 @@ import { findPackageRoot, getPackage, Package } from "./util/package";
 import { readMarkdownFile } from "./util/markdown";
 import { fileExists, ifFileExists } from "./util/fs-extras";
 import SiteData, { SiteComponent } from "./util/site-data";
-import handlebars from "handlebars";
 import { generateFavicons } from "./util/favicons";
-import XmlBuilder from "xmlbuilder";
+import { loadProjectManifest, Manifest } from "./util/manifest";
 
 export default async function generateSite(): Promise<void> {
   const outputDir = "public";
@@ -22,6 +21,8 @@ export default async function generateSite(): Promise<void> {
     mkdirp(outputPath)
   ]);
 
+  const manifest = await loadProjectManifest(rootDir, mainPackage);
+
   const [logoUrl, readme, faviconTags]: [
     string,
     string,
@@ -29,7 +30,7 @@ export default async function generateSite(): Promise<void> {
   ] = await Promise.all([
     publishLogo(rootDir, mainPackage, outputDir),
     getReadmeContent(rootDir),
-    publishFavicons(rootDir, mainPackage, outputDir)
+    generateFavicons(rootDir, outputDir, manifest)
   ]);
 
   const siteData: SiteData = {
@@ -42,7 +43,12 @@ export default async function generateSite(): Promise<void> {
 
   const html = await renderPage("homepage", siteData, Homepage, faviconTags);
 
-  await fs.promises.writeFile(path.join(outputDir, "index.html"), html, {
+  const indexFile = path.join(outputDir, "index.html");
+  if (await fileExists(indexFile)) {
+    await fs.promises.chmod(indexFile, WRITEABLE);
+  }
+  await mkdirp(path.dirname(indexFile));
+  await fs.promises.writeFile(indexFile, html, {
     encoding: "utf-8",
     mode: READ_ONLY
   });
@@ -55,10 +61,6 @@ async function renderPage(
   Component: SiteComponent,
   faviconTags: Array<ReactElement>
 ): Promise<string> {
-  // const encodedAppProperties = JSON.stringify(siteData);
-  // .replace(/\\/g, "\\\\")
-  // .replace(/\//g, "\\/");
-
   const Page = () => (
     <html>
       <head>
@@ -99,6 +101,7 @@ async function getReadmeContent(rootDir: string): Promise<string | null> {
 }
 
 const READ_ONLY = 0o444;
+const WRITEABLE = 0o644;
 
 /**
  * @param rootDir The root directory of the project
@@ -118,23 +121,13 @@ async function publishLogo(
       throw new Error(`Specified logo file doesn't exist: ${logoPath}`);
     }
     const logoOutputPath = path.join(outputDir, logoUrl);
+    if (await fileExists(logoOutputPath)) {
+      await fs.promises.chmod(logoOutputPath, WRITEABLE);
+    }
     await mkdirp(path.dirname(logoOutputPath));
     await fs.promises.copyFile(logoPath, logoOutputPath);
-    await fs.promises.chmod(logoPath, READ_ONLY);
+    await fs.promises.chmod(logoOutputPath, READ_ONLY);
     console.log(`Copied logo file: ${logoOutputPath}`);
   }
   return logoUrl;
-}
-
-async function publishFavicons(
-  rootDir: string,
-  mainPackage: Package,
-  outputDir: string
-): Promise<Array<ReactElement>> {
-  const icons = await generateFavicons(
-    rootDir,
-    mainPackage.icons || [mainPackage.logo],
-    outputDir
-  );
-  return icons;
 }

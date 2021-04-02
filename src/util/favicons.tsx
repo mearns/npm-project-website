@@ -2,206 +2,138 @@ import Jimp from "jimp";
 import path from "path";
 import fs from "fs";
 import mkdirp from "mkdirp";
-import * as FileType from "file-type";
-import xmljs from "xml-js";
+import { findBestIcon, Icon, Manifest } from "./manifest";
+import { ReactElement } from "react";
+import { fileExists } from "./fs-extras";
 
+/**
+ * Uses a predetermined set of icon sizes and types to determine a preferred set of
+ * icons to use for the page; generates those icons in the public directory from those provided
+ * in the manifest, and returns an array of Link elements to describe them.
+ */
 export async function generateFavicons(
   projectRootDir: string,
-  icons: Array<string>,
-  publicRootDir: string
+  publicRootDir: string,
+  manifest: Manifest
 ): Promise<Array<React.ReactElement>> {
-  if (!icons || !icons.length) {
-    return;
+  if (!manifest.icons || !manifest.icons.length) {
+    return [];
   }
 
-  const fileTypes = await Promise.all(icons.map(p => detectMimeType(p)));
-
-  const srcImages = await Promise.all(
-    icons
-      .filter((p, idx) => fileTypes[idx] !== "image/svg+xml")
-      .map(async p => ({
-        file: p,
-        img: await Jimp.read(path.resolve(projectRootDir, p))
-      }))
-  );
-
-  const [favicon32, appleTouchIcon, icon192, icon512] = await Promise.all([
-    generateImage(srcImages, publicRootDir, 32, 32, ["favicon.ico"]),
-    generateImage(srcImages, publicRootDir, 180, 180, [
-      "resources",
-      "icon-180.png"
-    ]),
-    generateImage(srcImages, publicRootDir, 192, 192, [
-      "resources",
-      "icon-192.png"
-    ]),
-    generateImage(srcImages, publicRootDir, 512, 512, [
-      "resources",
-      "icon-512.png"
-    ])
-  ]);
-
-  const manifest = {
-    icons: [
-      { src: icon192, type: "image/png", sizes: "192x192" },
-      { src: icon512, type: "image/png", sizes: "512x512" },
-      { src: favicon32, type: "image/png", sizes: "32x32" },
-      { src: appleTouchIcon, type: "image/png", sizes: "180x180" }
+  const iconDefinitions: Array<[
+    string,
+    string,
+    number,
+    number,
+    (t: string) => boolean,
+    Array<string>
+  ]> = [
+    [
+      "icon",
+      "svg",
+      128,
+      128,
+      allowSvgType,
+      ["resources", "generated", "icon.svg"]
+    ],
+    [
+      "icon",
+      "icon-180",
+      180,
+      180,
+      allowTypesForFavicon,
+      ["resources", "generated", "icon-180.png"]
+    ],
+    [
+      "icon",
+      "icon-512",
+      512,
+      512,
+      allowTypesForFavicon,
+      ["resources", "generated", "icon-512.png"]
+    ],
+    ["icon", "favicon", 32, 32, allowTypesForFavicon, ["favicon.ico"]],
+    [
+      "apple-touch-icon",
+      "apple-touch-icon",
+      192,
+      192,
+      allowTypesForFavicon,
+      ["resources", "generated", "icon-192.png"]
     ]
-  };
+  ];
 
-  const svgIcons = icons.filter((p, idx) => fileTypes[idx] === "image/svg+xml");
-  if (svgIcons.length) {
-    const url = await copyImage(svgIcons[0], publicRootDir, [
-      "resources",
-      "icon.svg"
-    ]);
-    manifest.icons.unshift({
-      src: url,
-      type: "image/svg+xml",
-      sizes:
-        "1x1 12x12 16x16 24x24 32x32 48x48 72x72 96x96 128x128 256x256 512x512 1024x1024 1048576x1048576"
-    });
-    manifest.icons.unshift({
-      src: url,
-      type: "image/svg+xml",
-      sizes: "any"
-    });
-  }
-
-  await mkdirp(publicRootDir);
-  await fs.promises.writeFile(
-    path.resolve(publicRootDir, "manifest.webmanifest"),
-    JSON.stringify(manifest),
-    { encoding: "utf-8", mode: READ_ONLY }
+  const iconElements = await Promise.all(
+    iconDefinitions.map(i =>
+      generateImage(projectRootDir, manifest, publicRootDir, ...i)
+    )
   );
 
-  return [
-    <link
-      key="32"
-      rel="icon"
-      href={favicon32}
-      sizes="32x32"
-      type="image/png"
-    />,
-    <link
-      key="192"
-      rel="icon"
-      href={icon192}
-      sizes="192x192"
-      type="image/png"
-    />,
-    <link
-      key="512"
-      rel="icon"
-      href={icon512}
-      sizes="512x512"
-      type="image/png"
-    />,
-    <link
-      key="apply-touch-icon"
-      rel="apple-touch-icon"
-      href={appleTouchIcon}
-      sizes="180x180"
-      type="image/png"
-    />,
-    <link
-      key="manifest"
-      rel="manifest"
-      href="/manifest.webmanifest"
-      type="application/json"
-    />
-  ];
+  return iconElements.filter(el => typeof el !== "undefined");
+}
+
+function allowSvgType(type: string): boolean {
+  return type === "image/svg+xml";
+}
+
+function allowTypesForFavicon(type: string): boolean {
+  switch (type) {
+    case "image/png":
+    case "image/gif":
+    case "image/jpeg":
+      return true;
+  }
+  return false;
+}
+
+/**
+ * Find the best icon in the manifest for the given constraints, if one exists.
+ * Copy and scale it to the output directory, and return a Link element to describe
+ * it.
+ */
+async function generateImage(
+  projectRootDir: string,
+  manifest: Manifest,
+  publicRootDir: string,
+  rel: string,
+  key: string,
+  w: number,
+  h: number,
+  allowType: (type: string) => boolean,
+  pathComponents: Array<string>
+): Promise<ReactElement | undefined> {
+  const icon = findBestIcon(manifest, w, h, allowType);
+  if (icon) {
+    const url = "/" + pathComponents.join("/");
+    const outputPath = path.resolve(publicRootDir, ...pathComponents);
+    const inputPath = path.resolve(projectRootDir, icon.src);
+    if (await fileExists(outputPath)) {
+      await fs.promises.chmod(outputPath, WRITEABLE);
+    }
+    await mkdirp(path.dirname(outputPath));
+    let sizes;
+    if (icon.type === "image/svg+xml") {
+      await copyImage(inputPath, outputPath);
+      sizes =
+        "1x1 12x12 24x24 32x32 48x48 64x64 128x128 180x180 256x256 512x512 1024x1024 1048576x1048576 any";
+    } else {
+      await (await Jimp.read(inputPath))
+        .scaleToFit(w, h)
+        .writeAsync(outputPath);
+      await fs.promises.chmod(outputPath, READ_ONLY);
+      sizes = `${w}x${h}`;
+    }
+    console.log(`Generated icon ${url} from ${icon.src}`);
+    return (
+      <link rel={rel} key={key} href={url} sizes={sizes} type={icon.type} />
+    );
+  }
+}
+
+async function copyImage(srcPath: string, outputPath: string): Promise<void> {
+  await fs.promises.copyFile(srcPath, outputPath);
+  await fs.promises.chmod(outputPath, READ_ONLY);
 }
 
 const READ_ONLY = 0o444;
-
-async function generateImage(
-  allImages: Array<{ img: Jimp; file: string }>,
-  publicRootDir: string,
-  w: number,
-  h: number,
-  pathComponents: Array<string>
-) {
-  const scaleData = allImages.map(({ img }, idx) => {
-    return {
-      ...findScale(w, h, img.bitmap.width, img.bitmap.height),
-      idx
-    };
-  });
-  const { idx: bestFitIdx } = scaleData.reduce((best, current) => {
-    if (current.score > best.score) {
-      return current;
-    }
-    return best;
-  });
-  const bestImg = allImages[bestFitIdx];
-  const imgBuffer: Buffer = await (await Jimp.read(bestImg.img))
-    .contain(w, h)
-    .getBufferAsync(Jimp.MIME_PNG);
-
-  const urlPath = `/${pathComponents.join("/")}`;
-  const outputPath = path.resolve(publicRootDir, ...pathComponents);
-  await mkdirp(path.dirname(outputPath));
-  await fs.promises.writeFile(outputPath, imgBuffer, { mode: READ_ONLY });
-  console.log(`Generated icon ${urlPath} from ${bestImg.file}`);
-  return urlPath;
-}
-
-async function copyImage(
-  filePath: fs.PathLike,
-  publicRootDir: string,
-  pathComponents: Array<string>
-): Promise<string> {
-  const urlPath = `/${pathComponents.join("/")}`;
-  const outputPath = path.resolve(publicRootDir, ...pathComponents);
-  await mkdirp(path.dirname(outputPath));
-  await fs.promises.copyFile(filePath, outputPath);
-  await fs.promises.chmod(filePath, READ_ONLY);
-  console.log(`Copied icon ${urlPath} from ${filePath}`);
-  return urlPath;
-}
-
-async function detectMimeType(p: fs.PathLike): Promise<string> {
-  const buffer = await fs.promises.readFile(p);
-  const fileType = await FileType.fromBuffer(buffer);
-  if (typeof fileType !== "undefined") {
-    return fileType.mime;
-  }
-
-  const text = buffer.toString("utf-8");
-  try {
-    const xml = xmljs.xml2js(text);
-    if (xml.elements && xml.elements.length && xml.elements[0].name === "svg") {
-      return "image/svg+xml";
-    }
-    throw Object.assign(
-      new Error(
-        `Unknown XML image format for file, expected SVG as the root element: ${p}`
-      ),
-      { filePath: p }
-    );
-  } catch (_) {
-    // Not XML
-  }
-
-  throw Object.assign(
-    new Error(
-      `Unknown image format for file, expected PNG, JPEG, GIF, or SVG: ${p}`
-    ),
-    { filePath: p }
-  );
-}
-
-function findScale(
-  dw: number,
-  dh: number,
-  w: number,
-  h: number
-): { scale: number; score: number } {
-  const scale = Math.min(dw / w, dh / h);
-  const scaleScore = scale > 1 ? 1 / scale : scale;
-  const filledArea = w * scale * h * scale;
-  const fill = filledArea / (dw * dh);
-  return { scale, score: scaleScore * fill };
-}
+const WRITEABLE = 0o644;
