@@ -8,8 +8,9 @@ import { findPackageRoot, getPackage, Package } from "./util/package";
 import { readMarkdownFile } from "./util/markdown";
 import { fileExists, ifFileExists } from "./util/fs-extras";
 import SiteData, { SiteComponent } from "./util/site-data";
-import { generateFavicons } from "./util/favicons";
-import { loadProjectManifest, Manifest } from "./util/manifest";
+import { generateFavicons, generateImage } from "./util/favicons";
+import { findBestIcon, loadProjectManifest } from "./util/manifest";
+import { Icon, Manifest } from "./util/manifest-types";
 
 export default async function generateSite(): Promise<void> {
   const outputDir = "public";
@@ -23,12 +24,20 @@ export default async function generateSite(): Promise<void> {
 
   const manifest = await loadProjectManifest(rootDir, mainPackage);
 
-  const [logoUrl, readme, faviconTags]: [
-    string,
+  const [logoIcon, readme, faviconTags]: [
+    (
+      | {
+          href: string;
+          width: number;
+          height: number;
+          type: string;
+        }
+      | undefined
+    ),
     string,
     Array<ReactElement>
   ] = await Promise.all([
-    publishLogo(rootDir, mainPackage, outputDir),
+    publishLogo(rootDir, manifest, outputDir),
     getReadmeContent(rootDir),
     generateFavicons(rootDir, outputDir, manifest)
   ]);
@@ -37,8 +46,8 @@ export default async function generateSite(): Promise<void> {
     name: mainPackage.name,
     version: mainPackage.version,
     repositoryUrl: mainPackage.repository?.url,
-    logoUrl: logoUrl,
-    readme: readme
+    readme: readme,
+    logoIcon
   };
 
   const html = await renderPage("homepage", siteData, Homepage, faviconTags);
@@ -111,23 +120,20 @@ const WRITEABLE = 0o644;
  */
 async function publishLogo(
   rootDir: string,
-  mainPackage: Package,
+  manifest: Manifest,
   outputDir: string
-): Promise<string> {
-  const logoPath = path.resolve(rootDir, mainPackage.logo);
-  const logoUrl = logoPath && `resources/logo${path.extname(logoPath)}`;
-  if (logoPath) {
-    if (!(await fileExists(logoPath))) {
-      throw new Error(`Specified logo file doesn't exist: ${logoPath}`);
-    }
-    const logoOutputPath = path.join(outputDir, logoUrl);
-    if (await fileExists(logoOutputPath)) {
-      await fs.promises.chmod(logoOutputPath, WRITEABLE);
-    }
-    await mkdirp(path.dirname(logoOutputPath));
-    await fs.promises.copyFile(logoPath, logoOutputPath);
-    await fs.promises.chmod(logoOutputPath, READ_ONLY);
-    console.log(`Copied logo file: ${logoOutputPath}`);
-  }
-  return logoUrl;
+): Promise<
+  | { href: string; width: number; height: number; sizes: string; type: string }
+  | undefined
+> {
+  return generateImage(
+    rootDir,
+    manifest,
+    outputDir,
+    600,
+    600,
+    false,
+    () => true,
+    ["resources", "generated", "main-logo"]
+  );
 }

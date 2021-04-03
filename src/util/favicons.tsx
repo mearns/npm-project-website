@@ -2,7 +2,8 @@ import Jimp from "jimp";
 import path from "path";
 import fs from "fs";
 import mkdirp from "mkdirp";
-import { findBestIcon, Icon, Manifest } from "./manifest";
+import { Manifest } from "./manifest-types";
+import { findBestIcon } from "./manifest";
 import { ReactElement } from "react";
 import { fileExists } from "./fs-extras";
 
@@ -34,7 +35,7 @@ export async function generateFavicons(
       128,
       128,
       allowSvgType,
-      ["resources", "generated", "icon.svg"]
+      ["resources", "generated", "icon-svg"]
     ],
     [
       "icon",
@@ -42,7 +43,7 @@ export async function generateFavicons(
       180,
       180,
       allowTypesForFavicon,
-      ["resources", "generated", "icon-180.png"]
+      ["resources", "generated", "icon-180"]
     ],
     [
       "icon",
@@ -50,7 +51,7 @@ export async function generateFavicons(
       512,
       512,
       allowTypesForFavicon,
-      ["resources", "generated", "icon-512.png"]
+      ["resources", "generated", "icon-512"]
     ],
     ["icon", "favicon", 32, 32, allowTypesForFavicon, ["favicon.ico"]],
     [
@@ -59,13 +60,23 @@ export async function generateFavicons(
       192,
       192,
       allowTypesForFavicon,
-      ["resources", "generated", "icon-192.png"]
+      ["resources", "generated", "icon-192"]
     ]
   ];
 
   const iconElements = await Promise.all(
-    iconDefinitions.map(i =>
-      generateImage(projectRootDir, manifest, publicRootDir, ...i)
+    iconDefinitions.map(([rel, key, w, h, allowType, pathComponents]) =>
+      generateIconLink(
+        projectRootDir,
+        manifest,
+        publicRootDir,
+        rel,
+        key,
+        w,
+        h,
+        allowType,
+        pathComponents
+      )
     )
   );
 
@@ -86,12 +97,70 @@ function allowTypesForFavicon(type: string): boolean {
   return false;
 }
 
+export async function generateImage(
+  projectRootDir: string,
+  manifest: Manifest,
+  publicRootDir: string,
+  w: number,
+  h: number,
+  letterBox: boolean = false,
+  allowType: (type: string) => boolean,
+  pathComponents: Array<string>
+): Promise<
+  | { href: string; width: number; height: number; sizes: string; type: string }
+  | undefined
+> {
+  const icon = findBestIcon(manifest, w, h, allowType);
+  if (icon) {
+    const lastComponent = pathComponents[pathComponents.length - 1];
+    const fileName =
+      path.basename(lastComponent, path.extname(lastComponent)) +
+      (path.extname(lastComponent) || path.extname(icon.src));
+    const relPath = [...pathComponents.slice(0, -1), fileName];
+    const url = "/" + relPath.join("/");
+    const outputPath = path.resolve(publicRootDir, ...relPath);
+    const inputPath = path.resolve(projectRootDir, icon.src);
+    if (await fileExists(outputPath)) {
+      await fs.promises.chmod(outputPath, WRITEABLE);
+    }
+    await mkdirp(path.dirname(outputPath));
+    let sizes;
+    let dims;
+    if (icon.type === "image/svg+xml") {
+      await copyImage(inputPath, outputPath);
+      sizes =
+        "1x1 12x12 24x24 32x32 48x48 64x64 128x128 180x180 256x256 512x512 1024x1024 1048576x1048576 any";
+      dims = [w, h];
+    } else {
+      const scale = letterBox
+        ? (i: Jimp) => i.contain(w, h)
+        : (i: Jimp) => i.scaleToFit(w, h);
+      const scaledImg = await scale(await Jimp.read(inputPath)).writeAsync(
+        outputPath
+      );
+      await fs.promises.chmod(outputPath, READ_ONLY);
+      const width = scaledImg.getWidth();
+      const height = scaledImg.getHeight();
+      sizes = `${w}x${h}`;
+      dims = [width, height];
+    }
+    console.log(`Generated image ${url} from ${icon.src}`);
+    return {
+      href: url,
+      sizes,
+      width: dims[0],
+      height: dims[1],
+      type: icon.type
+    };
+  }
+}
+
 /**
  * Find the best icon in the manifest for the given constraints, if one exists.
  * Copy and scale it to the output directory, and return a Link element to describe
  * it.
  */
-async function generateImage(
+async function generateIconLink(
   projectRootDir: string,
   manifest: Manifest,
   publicRootDir: string,
@@ -102,31 +171,19 @@ async function generateImage(
   allowType: (type: string) => boolean,
   pathComponents: Array<string>
 ): Promise<ReactElement | undefined> {
-  const icon = findBestIcon(manifest, w, h, allowType);
+  const icon = await generateImage(
+    projectRootDir,
+    manifest,
+    publicRootDir,
+    w,
+    h,
+    true,
+    allowType,
+    pathComponents
+  );
   if (icon) {
-    const url = "/" + pathComponents.join("/");
-    const outputPath = path.resolve(publicRootDir, ...pathComponents);
-    const inputPath = path.resolve(projectRootDir, icon.src);
-    if (await fileExists(outputPath)) {
-      await fs.promises.chmod(outputPath, WRITEABLE);
-    }
-    await mkdirp(path.dirname(outputPath));
-    let sizes;
-    if (icon.type === "image/svg+xml") {
-      await copyImage(inputPath, outputPath);
-      sizes =
-        "1x1 12x12 24x24 32x32 48x48 64x64 128x128 180x180 256x256 512x512 1024x1024 1048576x1048576 any";
-    } else {
-      await (await Jimp.read(inputPath))
-        .scaleToFit(w, h)
-        .writeAsync(outputPath);
-      await fs.promises.chmod(outputPath, READ_ONLY);
-      sizes = `${w}x${h}`;
-    }
-    console.log(`Generated icon ${url} from ${icon.src}`);
-    return (
-      <link rel={rel} key={key} href={url} sizes={sizes} type={icon.type} />
-    );
+    const { href, sizes, type } = icon;
+    return <link {...{ rel, key, href, sizes, type }} />;
   }
 }
 

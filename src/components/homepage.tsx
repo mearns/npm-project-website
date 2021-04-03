@@ -9,7 +9,7 @@ export default function Homepage({
   name,
   version,
   repositoryUrl,
-  logoUrl,
+  logoIcon,
   readme
 }: SiteData): React.ReactElement {
   const generalStyles = css({
@@ -126,8 +126,14 @@ export default function Homepage({
           }
         }}
       >
-        {logoUrl && (
-          <img id="logo" src={logoUrl} alt={`Project logo for ${name}`} />
+        {logoIcon && (
+          <img
+            id="logo"
+            src={logoIcon.href}
+            width={logoIcon.width}
+            height={logoIcon.height}
+            alt={`Project logo for ${name}`}
+          />
         )}
 
         <h2 id="for-humans">

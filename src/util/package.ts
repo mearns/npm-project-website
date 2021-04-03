@@ -1,6 +1,7 @@
 import fs from "fs";
 import { fileExists } from "./fs-extras";
 import path from "path";
+import { IconPurpose } from "./manifest-types";
 
 export interface Package {
   name: string;
@@ -12,7 +13,7 @@ export interface Package {
         src: string;
         type?: string;
         sizes?: "any" | Array<string>;
-        purpose?: Array<"maskable" | "monochrome" | "any">;
+        purpose?: Array<IconPurpose>;
       }
   >;
   repository?: {

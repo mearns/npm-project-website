@@ -4,17 +4,7 @@ import * as FileType from "file-type";
 import xmljs from "xml-js";
 import path from "path";
 import Jimp from "jimp";
-
-export interface Icon {
-  src: string;
-  type: string;
-  sizes: "any" | Array<[number, number]>;
-  purpose: Array<"monochrome" | "maskable" | "any">;
-}
-
-export interface Manifest {
-  icons?: Array<Icon>;
-}
+import { Manifest, Icon, IconPurpose } from "./manifest-types";
 
 export async function loadProjectManifest(
   projectRootDir: string,
@@ -45,10 +35,10 @@ export async function loadProjectManifest(
 
       const purpose =
         typeof iconDecl === "string" || !iconDecl.purpose
-          ? (["any"] as Array<"any">)
-          : (iconDecl.purpose.filter(
-              p => p === "maskable" || p === "any" || p === "monochrome"
-            ) as Array<"maskable" | "any" | "monochrome">);
+          ? (["any"] as Array<IconPurpose>)
+          : (iconDecl.purpose.filter(p =>
+              Object.keys(IconPurpose).some(k => p === k)
+            ) as Array<IconPurpose>);
 
       return { src, type, sizes, purpose };
     })

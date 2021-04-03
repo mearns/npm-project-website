@@ -1,4 +1,7 @@
 {
-  "extends": ["mearns/typescript", "mearns/jest"],
+  "extends": [
+    "@bmearns/eslint-config/jest",
+    "@bmearns/eslint-config/typescript"
+  ],
   "ignorePatterns": ["node_modules"]
 }

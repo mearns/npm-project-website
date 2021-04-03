@@ -4,8 +4,13 @@ interface SiteData {
   name: string;
   version: string;
   repositoryUrl?: string;
-  logoUrl?: string;
   readme?: string;
+  logoIcon?: {
+    href: string;
+    width: number;
+    height: number;
+    type: string;
+  };
 }
 
 export default SiteData;
